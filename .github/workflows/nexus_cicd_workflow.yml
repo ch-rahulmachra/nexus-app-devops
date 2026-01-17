@@ -1,0 +1,437 @@
+name: Dev Workflow(Reusable)
+on:
+    workflow_call:
+        inputs:
+            FRONT_IMAGE:
+                description: "Provide the name of frontend image"
+                required: true
+                type: string
+                default: "temp_front_image"
+            AUTH_IMAGE:
+                description: "Provide the name of auth image"
+                required: true
+                type: string
+                default: "temp_auth_image"
+            REPORTING_IMAGE:
+                description: "Provide the name of reporting image"
+                required: true
+                type: string
+                default: "temp_reporting_image"
+            TASK_IMAGE:
+                description: "Provide the name of task image"
+                required: true
+                type: string
+                default: "temp_task_image"
+            EXPENSE_IMAGE:
+                description: "Provide the name of expense image"
+                required: true
+                type: string
+                default: "temp_expense_image"
+            USER_IMAGE:
+                description: "Provide the name of user image"
+                required: true
+                type: string
+                default: "temp_user_image"
+            APPROVAL_IMAGE:
+                description: "Provide the name of approval image"
+                required: true
+                type: string
+                default: "temp_approval_image"
+            NOTIFICATION_IMAGE:
+                description: "Provide the name of notification image"
+                required: true
+                type: string
+                default: "temp_notification_image"
+            PROJECT_IMAGE:
+                description: "Provide the name of project image"
+                required: true
+                type: string
+                default: "temp_project_image"
+            AUDIT_IMAGE:
+                description: "Provide the name of audit image"
+                required: true
+                type: string
+                default: "temp_audit_image"
+jobs:
+    detect-changes:
+        runs-on: self-hosted
+        outputs:
+            frontend: ${{ steps.filter.outputs.frontend }}
+            approval: ${{ steps.filter.outputs.approval }}
+            audit: ${{ steps.filter.outputs.audit }}
+            auth: ${{ steps.filter.outputs.auth }}
+            expense: ${{ steps.filter.outputs.expense }}
+            notification: ${{ steps.filter.outputs.notification }}
+            project: ${{ steps.filter.outputs.project }}
+            reporting: ${{ steps.filter.outputs.reporting }}
+            task: ${{ steps.filter.outputs.task }}
+            user: ${{ steps.filter.outputs.user }}
+            db: ${{ steps.filter.outputs.db }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+            - id: filter
+              uses: dorny/paths-filter@v3
+              with:
+                filters: |
+                  frontend:
+                    - 'frontend/**'
+                  approval:
+                    - 'services/approval-service/**'
+                  audit:
+                    - 'services/audit-service/**'
+                  auth:
+                    - 'services/auth-service/**'
+                  expense:
+                    - 'services/expense-service/**'
+                  notification:
+                    - 'services/notification-service/**'
+                  project:
+                    - 'services/project-service/**'
+                  reporting:
+                    - 'services/reporting-service/**'
+                  task:
+                    - 'services/task-service/**'
+                  user:
+                    - 'services/user-service/**'
+                  db:
+                    - 'db/**'
+
+            - name: Stop workflow if no changes
+              if: ${{ steps.filter.outputs.frontend == 'false' && steps.filter.outputs.approval == 'false' && steps.filter.outputs.audit == 'false' && steps.filter.outputs.expense == 'false' && steps.filter.outputs.notification == 'false' && steps.filter.outputs.auth == 'false' && steps.filter.outputs.project == 'false' && steps.filter.outputs.reporting == 'false' && steps.filter.outputs.task == 'false' && steps.filter.outputs.user == 'false' && steps.filter.outputs.db == 'false'  }}
+              run: |
+                echo "No changes detected in any services. Cancelling workflow."
+                exit 0
+    leakscan:
+        runs-on: self-hosted
+        needs: detect-changes
+        steps:
+          - name: Get code
+            uses: actions/checkout@v4
+          
+          - uses: gitleaks/gitleaks-action@v2
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE}}
+    trivyfs:
+        needs: [leakscan, detect-changes]
+        runs-on: self-hosted
+        strategy:
+            matrix:
+                service:
+                  - name: frontend
+                    path: ./frontend
+                    dockerfile: ./frontend/Dockerfile
+                    image: FRONT_IMAGE
+
+                  - name: approval
+                    path: ./services/approval-service
+                    dockerfile: ./services/approval-service/Dockerfile
+                    image: APPROVAL_IMAGE
+
+                  - name: audit
+                    path: ./services/audit-service
+                    dockerfile: ./services/audit-service/Dockerfile
+                    image: AUDIT_IMAGE
+
+                  - name: auth
+                    path: ./services/auth-service
+                    dockerfile: ./services/auth-service/Dockerfile
+                    image: AUTH_IMAGE
+
+                  - name: expense
+                    path: ./services/expense-service
+                    dockerfile: ./services/expense-service/Dockerfile
+                    image: EXPENSE_IMAGE
+
+                  - name: notification
+                    path: ./services/notification-service
+                    dockerfile: ./services/notification-service/Dockerfile
+                    image: NOTIFICATION_IMAGE
+
+                  - name: project
+                    path: ./services/project-service
+                    dockerfile: ./services/project-service/Dockerfile
+                    image: PROJECT_IMAGE
+
+                  - name: reporting
+                    path: ./services/reporting-service
+                    dockerfile: ./services/reporting-service/Dockerfile
+                    image: REPORTING_IMAGE
+
+                  - name: task
+                    path: ./services/task-service
+                    dockerfile: ./services/task-service/Dockerfile
+                    image: TASK_IMAGE
+
+                  - name: user
+                    path: ./services/user-service
+                    dockerfile: ./services/user-service/Dockerfile
+                    image: USER_IMAGE
+        steps:
+          - name: Checkout code
+            uses: actions/checkout@v4
+
+          - name: Ensure Trivy cache folder exists
+            run: mkdir -p ${{ github.workspace }}/.trivy-cache
+
+          - name: Cache Trivy DB
+            uses: actions/cache@v4
+            with:
+              path: ${{ github.workspace }}/.trivy-cache
+              key: trivy-image-db
+
+          - name: Run Trivy vulnerability scanner in fs mode for ${{matrix.service.name}}
+            if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+            uses: aquasecurity/trivy-action@0.28.0
+            with:
+              scan-type: 'fs'
+              scan-ref: ${{matrix.service.path}}
+              vuln-type: os,library
+              severity: CRITICAL,HIGH
+              ignore-unfixed: true
+              exit-code: 0
+              format: table
+              cache-dir: ${{ github.workspace }}/.trivy-cache
+    checkout:
+        runs-on: self-hosted
+        needs: [trivyfs]
+        steps:
+            - name: Get code
+              uses: actions/checkout@v4
+
+            - name: Verify repo structure
+              run: |
+                echo "Repository contents:"
+                ls -R
+
+            - name: Upload source code
+              uses: actions/upload-artifact@v4
+              with:
+                name: source-code
+                path: .
+    build:
+        needs: [checkout, detect-changes]
+        runs-on: self-hosted
+        strategy:
+            matrix:
+                service:
+                  - name: frontend
+                    path: ./frontend
+                    dockerfile: ./frontend/Dockerfile
+                    image: FRONT_IMAGE
+
+                  - name: approval
+                    path: ./services/approval-service
+                    dockerfile: ./services/approval-service/Dockerfile
+                    image: APPROVAL_IMAGE
+
+                  - name: audit
+                    path: ./services/audit-service
+                    dockerfile: ./services/audit-service/Dockerfile
+                    image: AUDIT_IMAGE
+
+                  - name: auth
+                    path: ./services/auth-service
+                    dockerfile: ./services/auth-service/Dockerfile
+                    image: AUTH_IMAGE
+
+                  - name: expense
+                    path: ./services/expense-service
+                    dockerfile: ./services/expense-service/Dockerfile
+                    image: EXPENSE_IMAGE
+
+                  - name: notification
+                    path: ./services/notification-service
+                    dockerfile: ./services/notification-service/Dockerfile
+                    image: NOTIFICATION_IMAGE
+
+                  - name: project
+                    path: ./services/project-service
+                    dockerfile: ./services/project-service/Dockerfile
+                    image: PROJECT_IMAGE
+
+                  - name: reporting
+                    path: ./services/reporting-service
+                    dockerfile: ./services/reporting-service/Dockerfile
+                    image: REPORTING_IMAGE
+
+                  - name: task
+                    path: ./services/task-service
+                    dockerfile: ./services/task-service/Dockerfile
+                    image: TASK_IMAGE
+
+                  - name: user
+                    path: ./services/user-service
+                    dockerfile: ./services/user-service/Dockerfile
+                    image: USER_IMAGE
+        steps:
+          - name: Download source code
+            uses: actions/download-artifact@v5
+            with:
+                name: source-code
+                path: .
+
+          - name: Set up Docker Buildx
+            uses: docker/setup-buildx-action@v3
+
+          - name: Build Images
+            if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+            run: docker build -t ${{ inputs[matrix.service.image] }}:latest -f ${{ matrix.service.dockerfile}} ${{matrix.service.path}}
+
+          - name: Verify built images
+            run: docker images
+    trivyimage:
+        needs: [build, detect-changes]
+        runs-on: self-hosted
+        continue-on-error: true
+        strategy:
+            matrix:
+                service:
+                  - name: frontend
+                    path: ./frontend
+                    dockerfile: ./frontend/Dockerfile
+                    image: FRONT_IMAGE
+
+                  - name: approval
+                    path: ./services/approval-service
+                    dockerfile: ./services/approval-service/Dockerfile
+                    image: APPROVAL_IMAGE
+
+                  - name: audit
+                    path: ./services/audit-service
+                    dockerfile: ./services/audit-service/Dockerfile
+                    image: AUDIT_IMAGE
+
+                  - name: auth
+                    path: ./services/auth-service
+                    dockerfile: ./services/auth-service/Dockerfile
+                    image: AUTH_IMAGE
+
+                  - name: expense
+                    path: ./services/expense-service
+                    dockerfile: ./services/expense-service/Dockerfile
+                    image: EXPENSE_IMAGE
+
+                  - name: notification
+                    path: ./services/notification-service
+                    dockerfile: ./services/notification-service/Dockerfile
+                    image: NOTIFICATION_IMAGE
+
+                  - name: project
+                    path: ./services/project-service
+                    dockerfile: ./services/project-service/Dockerfile
+                    image: PROJECT_IMAGE
+
+                  - name: reporting
+                    path: ./services/reporting-service
+                    dockerfile: ./services/reporting-service/Dockerfile
+                    image: REPORTING_IMAGE
+
+                  - name: task
+                    path: ./services/task-service
+                    dockerfile: ./services/task-service/Dockerfile
+                    image: TASK_IMAGE
+
+                  - name: user
+                    path: ./services/user-service
+                    dockerfile: ./services/user-service/Dockerfile
+                    image: USER_IMAGE
+        steps:
+            - name: Show Docker images
+              run: docker images
+
+            - name: Ensure Trivy cache folder exists
+              run: mkdir -p ${{ github.workspace }}/.trivy-cache
+
+            - name: Cache Trivy DB
+              uses: actions/cache@v4
+              with:
+                path: ${{ github.workspace }}/.trivy-cache
+                key: trivy-image-db
+                
+            - name: Run Trivy vulnerability scanner for ${{matrix.service.name}} image
+              if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+              uses: aquasecurity/trivy-action@0.28.0
+              with:
+                image-ref: '${{ inputs[matrix.service.image] }}:latest'
+                format: 'table'
+                exit-code: '0'
+                ignore-unfixed: true
+                scanners: vuln
+                severity: 'CRITICAL,HIGH'
+                cache-dir: ${{ github.workspace }}/.trivy-cache
+    test:
+        needs: [build, detect-changes]
+        runs-on: self-hosted
+        strategy:
+            matrix:
+                service:
+                #   - name: frontend
+                #     port: 80
+                  - name: approval
+                    port: 7300
+                  - name: audit
+                    port: 7500
+                  - name: auth
+                    port: 4000
+                  - name: expense
+                    port: 7200
+                  - name: notification
+                    port: 7400
+                  - name: project
+                    port: 7000
+                  - name: reporting
+                    port: 7600
+                  - name: task
+                    port: 7100
+                  - name: user
+                    port: 5000
+        steps:
+            - name: Show Docker images
+              run: docker images
+
+            - name: Run containers through custom action
+              uses: ./.github/actions/action.yml
+              with:
+                frontend: needs.detect-changes.outputs.frontend == 'true'
+                approval: needs.detect-changes.outputs.approval == 'true'
+                audit: needs.detect-changes.outputs.audit == 'true'
+                auth: needs.detect-changes.outputs.auth == 'true'
+                expense: needs.detect-changes.outputs.expense == 'true'
+                notification: needs.detect-changes.outputs.notification == 'true'
+                project: needs.detect-changes.outputs.project == 'true'
+                reporting: needs.detect-changes.outputs.reporting == 'true'
+                task: needs.detect-changes.outputs.task == 'true'
+                user: needs.detect-changes.outputs.user == 'true'
+                FRONT_IMAGE: ${{inputs.FRONT_IMAGE}}
+                AUTH_IMAGE: ${{inputs.AUTH_IMAGE}}
+                REPORTING_IMAGE: ${{inputs.REPORTING_IMAGE}}
+                TASK_IMAGE: ${{inputs.TASK_IMAGE}}
+                EXPENSE_IMAGE: ${{inputs.EXPENSE_IMAGE}}
+                USER_IMAGE: ${{inputs.USER_IMAGE}}
+                APPROVAL_IMAGE: ${{inputs.APPROVAL_IMAGE}}
+                NOTIFICATION_IMAGE: ${{inputs.NOTIFICATION_IMAGE}}
+                PROJECT_IMAGE: ${{inputs.PROJECT_IMAGE}}
+                AUDIT_IMAGE: ${{inputs.AUDIT_IMAGE}}
+            
+            - name: Test frontend accessibility
+              if: needs.detect-changes.outputs.frontend == 'true'
+              run: |
+                echo "Waiting for frontend to start..."
+                sleep 10
+                curl -f http://localhost:80 || (echo "❌ frontend not responding!" && exit 1)
+
+            - name: Test ${{matrix.service.name}} accessibility
+              if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+              run: |
+                echo "Waiting for ${{matrix.service.name}} to start..."
+                sleep 10
+                curl -f http://localhost:${{matrix.service.port}} || (echo "❌ ${{matrix.service.name}} not responding!" && exit 1)
+
+            - name: Stop and remove containers
+              if: always()
+              run: |
+                docker ps -a
+                docker stop ${{matrix.service.name}} || true
+                docker rm ${{matrix.service.name}} || true

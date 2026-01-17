@@ -1,0 +1,157 @@
+name: 'Container Creation'
+description: 'Here we create containers from the images of micro services'
+inputs:
+    frontend:
+      description: "frontend"
+      required: true
+    approval:
+      description: "approval"
+      required: true
+    user:
+      description: "user"
+      required: true
+    audit:
+      description: "audit"
+      required: true
+    auth:
+      description: "auth"
+      required: true
+    expense:
+      description: "expense"
+      required: true
+    reporting:
+      description: "reporting"
+      required: true
+    notification:
+      description: "notification"
+      required: true
+    task:
+      description: "task"
+      required: true
+    project:
+      description: "project"
+      required: true
+    FRONT_IMAGE:
+      description: "Provide the name of frontend image"
+      required: true
+      default: "temp_front_image"
+    AUTH_IMAGE:
+        description: "Provide the name of auth image"
+        required: true
+        default: "temp_auth_image"
+    REPORTING_IMAGE:
+        description: "Provide the name of reporting image"
+        required: true
+        default: "temp_reporting_image"
+    TASK_IMAGE:
+        description: "Provide the name of task image"
+        required: true
+        default: "temp_task_image"
+    EXPENSE_IMAGE:
+        description: "Provide the name of expense image"
+        required: true
+        default: "temp_expense_image"
+    USER_IMAGE:
+        description: "Provide the name of user image"
+        required: true
+        default: "temp_user_image"
+    APPROVAL_IMAGE:
+        description: "Provide the name of approval image"
+        required: true
+        default: "temp_approval_image"
+    NOTIFICATION_IMAGE:
+        description: "Provide the name of notification image"
+        required: true
+        default: "temp_notification_image"
+    PROJECT_IMAGE:
+        description: "Provide the name of project image"
+        required: true
+        default: "temp_project_image"
+    AUDIT_IMAGE:
+        description: "Provide the name of audit image"
+        required: true
+        default: "temp_audit_image"
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Frontend Container
+      if: ${{ inputs.frontend }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "frontend"; then
+            docker rm -f frontend
+          fi
+          docker run -d --name frontend -p 80:80 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.FRONT_IMAGE }}
+    - name: Run Auth Container
+      if: ${{ inputs.auth }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "auth-app"; then
+            docker rm -f auth-app
+          fi
+          docker run -d --name auth-app -p 4000:4000 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.AUTH_IMAGE }}
+    - name: Run User Container
+      if: ${{ inputs.user }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "user-app"; then
+            docker rm -f user-app
+          fi
+          docker run -d --name user-app -p 5000:5000 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.USER_IMAGE }}
+    - name: Run Approval Container
+      if: ${{ inputs.approval }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "approval-app"; then
+            docker rm -f approval-app
+          fi
+          docker run -d --name approval-app -p 7300:7300 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.APPROVAL_IMAGE }}
+    - name: Run Expense Container
+      if: ${{ inputs.expense }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "expense-app"; then
+            docker rm -f expense-app
+          fi
+          docker run -d --name expense-app -p 7200:7200 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.EXPENSE_IMAGE }}
+    - name: Run Project Container
+      if: ${{ inputs.project }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "project-app"; then
+            docker rm -f project-app
+          fi
+          docker run -d --name project-app -p 7000:7000 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.PROJECT_IMAGE }}
+    - name: Run Task Container
+      if: ${{ inputs.task }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "task-app"; then
+            docker rm -f task-app
+          fi
+          docker run -d --name task-app -p 7100:7100 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.TASK_IMAGE }}
+    - name: Run Notification Container
+      if: ${{ inputs.notification }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "notification-app"; then
+            docker rm -f notification-app
+          fi
+          docker run -d --name notification-app -p 7400:7400 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.NOTIFICATION_IMAGE }}
+    - name: Run Audit Container
+      if: ${{ inputs.audit }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "audit-app"; then
+            docker rm -f audit-app
+          fi
+          docker run -d --name audit-app -p 7500:7500 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.AUDIT_IMAGE }}
+    - name: Run Reporting Container
+      if: ${{ inputs.reporting }} == 'true'
+      shell: bash
+      run: |
+          if docker ps -a | grep "reporting-app"; then
+            docker rm -f reporting-app
+          fi
+          docker run -d --name reporting-app -p 7600:7600 -e DB_HOST=nexus.cjgickeiynwa.ap-south-1.rds.amazonaws.com -e DB_NAME=nexus -e DB_USER=nexus_user -e DB_PASS=strongpassword -e JWT_SECRET=supersecurejwtkey ${{ inputs.REPORTING_IMAGE }}
+    
