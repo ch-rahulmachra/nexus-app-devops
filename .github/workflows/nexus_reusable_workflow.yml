@@ -395,7 +395,7 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Run containers through custom action
-              uses: ./.github/actions/action.yml
+              uses: ch-rahulmachra/nexus-app-devops/.github/actions/container-action@main
               with:
                 frontend: needs.detect-changes.outputs.frontend == 'true'
                 approval: needs.detect-changes.outputs.approval == 'true'
