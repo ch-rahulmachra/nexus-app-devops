@@ -390,6 +390,9 @@ jobs:
         steps:
             - name: Show Docker images
               run: docker images
+            
+            - name: Checkout code
+              uses: actions/checkout@v4
 
             - name: Run containers through custom action
               uses: ./.github/actions/action.yml
@@ -435,3 +438,54 @@ jobs:
                 docker ps -a
                 docker stop ${{matrix.service.name}} || true
                 docker rm ${{matrix.service.name}} || true
+    push:
+        needs: test
+        runs-on: self-hosted
+        strategy:
+          matrix:
+            service:
+                  - name: frontend
+                    image: FRONT_IMAGE
+                  - name: approval
+                    image: APPROVAL_IMAGE
+                  - name: audit
+                    image: AUDIT_IMAGE
+                  - name: auth
+                    image: AUTH_IMAGE
+                  - name: expense
+                    image: EXPENSE_IMAGE
+                  - name: notification
+                    image: NOTIFICATION_IMAGE
+                  - name: project
+                    image: PROJECT_IMAGE
+                  - name: reporting
+                    image: REPORTING_IMAGE
+                  - name: task
+                    image: TASK_IMAGE
+                  - name: user
+                    image: USER_IMAGE
+        steps:
+              - name: Login in aws ecr
+                run: aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 802314158010.dkr.ecr.ap-south-1.amazonaws.com
+
+              - name: Tagging the ${{matrix.service.name}} images
+                if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+                run: |
+                    docker tag ${{ inputs[matrix.service.image] }} 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:latest
+                    docker tag ${{ inputs[matrix.service.image] }} 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:${{ github.run_number }}
+    
+              - name: Pushing the Frontend images
+                if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+                run: |
+                    docker push 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:latest
+                    docker push 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:${{ github.run_number }}
+
+              - name: Verify frontend image
+                run: |
+                  echo "Checking ECR ${{matrix.service.name}} Latest Image..."
+                  docker pull 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:latest
+                  docker images | grep nexus
+              
+              - name: Cleaning up images
+                if: always()
+                run: docker image prune -af
