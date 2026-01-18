@@ -361,32 +361,9 @@ jobs:
                 scanners: vuln
                 severity: 'CRITICAL,HIGH'
                 cache-dir: ${{ github.workspace }}/.trivy-cache
-    test:
+    run:
         needs: [build, detect-changes]
         runs-on: self-hosted
-        strategy:
-            matrix:
-                service:
-                #   - name: frontend
-                #     port: 80
-                  - name: approval
-                    port: 7300
-                  - name: audit
-                    port: 7500
-                  - name: auth
-                    port: 4000
-                  - name: expense
-                    port: 7200
-                  - name: notification
-                    port: 7400
-                  - name: project
-                    port: 7000
-                  - name: reporting
-                    port: 7600
-                  - name: task
-                    port: 7100
-                  - name: user
-                    port: 5000
         steps:
             - name: Show Docker images
               run: docker images
@@ -417,7 +394,33 @@ jobs:
                 NOTIFICATION_IMAGE: ${{inputs.NOTIFICATION_IMAGE}}
                 PROJECT_IMAGE: ${{inputs.PROJECT_IMAGE}}
                 AUDIT_IMAGE: ${{inputs.AUDIT_IMAGE}}
-            
+    test:
+        needs: [run]
+        runs-on: self-hosted
+        strategy:
+            matrix:
+                service:
+                #   - name: frontend
+                #     port: 80
+                  - name: approval
+                    port: 7300
+                  - name: audit
+                    port: 7500
+                  - name: auth
+                    port: 4000
+                  - name: expense
+                    port: 7200
+                  - name: notification
+                    port: 7400
+                  - name: project
+                    port: 7000
+                  - name: reporting
+                    port: 7600
+                  - name: task
+                    port: 7100
+                  - name: user
+                    port: 5000
+        steps:
             - name: Test frontend accessibility
               if: needs.detect-changes.outputs.frontend == 'true'
               run: |
@@ -430,7 +433,7 @@ jobs:
               run: |
                 echo "Waiting for ${{matrix.service.name}} to start..."
                 sleep 10
-                curl -f http://localhost:${{matrix.service.port}} || (echo "❌ ${{matrix.service.name}} not responding!" && exit 1)
+                curl -f http://localhost:${{matrix.service.port}}/health || (echo "❌ ${{matrix.service.name}} not responding!" && exit 1)
 
             - name: Stop and remove containers
               if: always()
