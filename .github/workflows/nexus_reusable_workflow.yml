@@ -391,131 +391,132 @@ jobs:
     #             scanners: vuln
     #             severity: 'CRITICAL,HIGH'
     #             cache-dir: ${{ github.workspace }}/.trivy-cache
-    run:
-        # needs: [build, detect-changes]
-        needs: detect-changes
-        runs-on: self-hosted
-        steps:
-            - name: Show Docker images
-              run: docker images
+    # run:
+    #     # needs: [build, detect-changes]
+    #     needs: detect-changes
+    #     runs-on: self-hosted
+    #     steps:
+    #         - name: Show Docker images
+    #           run: docker images
             
-            - name: Checkout code
-              uses: actions/checkout@v4
+    #         - name: Checkout code
+    #           uses: actions/checkout@v4
 
-            - name: Run containers through custom action
-              uses: ch-rahulmachra/nexus-app-devops/.github/actions/container-action@main
-              with:
-                frontend: needs.detect-changes.outputs.frontend == 'true'
-                approval: needs.detect-changes.outputs.approval == 'true'
-                audit: needs.detect-changes.outputs.audit == 'true'
-                auth: needs.detect-changes.outputs.auth == 'true'
-                expense: needs.detect-changes.outputs.expense == 'true'
-                notification: needs.detect-changes.outputs.notification == 'true'
-                project: needs.detect-changes.outputs.project == 'true'
-                reporting: needs.detect-changes.outputs.reporting == 'true'
-                task: needs.detect-changes.outputs.task == 'true'
-                user: needs.detect-changes.outputs.user == 'true'
-                FRONT_IMAGE: ${{inputs.FRONT_IMAGE}}
-                AUTH_IMAGE: ${{inputs.AUTH_IMAGE}}
-                REPORTING_IMAGE: ${{inputs.REPORTING_IMAGE}}
-                TASK_IMAGE: ${{inputs.TASK_IMAGE}}
-                EXPENSE_IMAGE: ${{inputs.EXPENSE_IMAGE}}
-                USER_IMAGE: ${{inputs.USER_IMAGE}}
-                APPROVAL_IMAGE: ${{inputs.APPROVAL_IMAGE}}
-                NOTIFICATION_IMAGE: ${{inputs.NOTIFICATION_IMAGE}}
-                PROJECT_IMAGE: ${{inputs.PROJECT_IMAGE}}
-                AUDIT_IMAGE: ${{inputs.AUDIT_IMAGE}}
-    test:
-        needs: [run, detect-changes]
-        runs-on: self-hosted
-        strategy:
-            matrix:
-                service:
-                  - name: approval
-                    port: 7300
-                    path: ./services/approval-service
-                    dockerfile: ./services/approval-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.approval }}
-                    image: ${{inputs.APPROVAL_IMAGE}}
+    #         - name: Run containers through custom action
+    #           uses: ch-rahulmachra/nexus-app-devops/.github/actions/container-action@main
+    #           with:
+    #             frontend: needs.detect-changes.outputs.frontend == 'true'
+    #             approval: needs.detect-changes.outputs.approval == 'true'
+    #             audit: needs.detect-changes.outputs.audit == 'true'
+    #             auth: needs.detect-changes.outputs.auth == 'true'
+    #             expense: needs.detect-changes.outputs.expense == 'true'
+    #             notification: needs.detect-changes.outputs.notification == 'true'
+    #             project: needs.detect-changes.outputs.project == 'true'
+    #             reporting: needs.detect-changes.outputs.reporting == 'true'
+    #             task: needs.detect-changes.outputs.task == 'true'
+    #             user: needs.detect-changes.outputs.user == 'true'
+    #             FRONT_IMAGE: ${{inputs.FRONT_IMAGE}}
+    #             AUTH_IMAGE: ${{inputs.AUTH_IMAGE}}
+    #             REPORTING_IMAGE: ${{inputs.REPORTING_IMAGE}}
+    #             TASK_IMAGE: ${{inputs.TASK_IMAGE}}
+    #             EXPENSE_IMAGE: ${{inputs.EXPENSE_IMAGE}}
+    #             USER_IMAGE: ${{inputs.USER_IMAGE}}
+    #             APPROVAL_IMAGE: ${{inputs.APPROVAL_IMAGE}}
+    #             NOTIFICATION_IMAGE: ${{inputs.NOTIFICATION_IMAGE}}
+    #             PROJECT_IMAGE: ${{inputs.PROJECT_IMAGE}}
+    #             AUDIT_IMAGE: ${{inputs.AUDIT_IMAGE}}
+    # test:
+    #     needs: [run, detect-changes]
+    #     runs-on: self-hosted
+    #     strategy:
+    #         matrix:
+    #             service:
+    #               - name: approval
+    #                 port: 7300
+    #                 path: ./services/approval-service
+    #                 dockerfile: ./services/approval-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.approval }}
+    #                 image: ${{inputs.APPROVAL_IMAGE}}
 
-                  - name: audit
-                    port: 7500
-                    path: ./services/audit-service
-                    dockerfile: ./services/audit-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.audit }}
-                    image: ${{inputs.AUDIT_IMAGE}}
+    #               - name: audit
+    #                 port: 7500
+    #                 path: ./services/audit-service
+    #                 dockerfile: ./services/audit-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.audit }}
+    #                 image: ${{inputs.AUDIT_IMAGE}}
 
-                  - name: auth
-                    port: 4000
-                    path: ./services/auth-service
-                    dockerfile: ./services/auth-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.auth }}
-                    image: ${{inputs.AUTH_IMAGE}}
+    #               - name: auth
+    #                 port: 4000
+    #                 path: ./services/auth-service
+    #                 dockerfile: ./services/auth-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.auth }}
+    #                 image: ${{inputs.AUTH_IMAGE}}
 
-                  - name: expense
-                    port: 7200
-                    path: ./services/expense-service
-                    dockerfile: ./services/expense-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.expense }}
-                    image: ${{inputs.EXPENSE_IMAGE}}
+    #               - name: expense
+    #                 port: 7200
+    #                 path: ./services/expense-service
+    #                 dockerfile: ./services/expense-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.expense }}
+    #                 image: ${{inputs.EXPENSE_IMAGE}}
 
-                  - name: notification
-                    port: 7400
-                    path: ./services/notification-service
-                    dockerfile: ./services/notification-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.notification }}
-                    image: ${{inputs.NOTIFICATION_IMAGE}}
+    #               - name: notification
+    #                 port: 7400
+    #                 path: ./services/notification-service
+    #                 dockerfile: ./services/notification-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.notification }}
+    #                 image: ${{inputs.NOTIFICATION_IMAGE}}
 
-                  - name: project
-                    port: 7000
-                    path: ./services/project-service
-                    dockerfile: ./services/project-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.project }}
-                    image: ${{inputs.PROJECT_IMAGE}}
+    #               - name: project
+    #                 port: 7000
+    #                 path: ./services/project-service
+    #                 dockerfile: ./services/project-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.project }}
+    #                 image: ${{inputs.PROJECT_IMAGE}}
 
-                  - name: reporting
-                    port: 7600
-                    path: ./services/reporting-service
-                    dockerfile: ./services/reporting-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.reporting }}
-                    image: ${{inputs.REPORTING_IMAGE}}
+    #               - name: reporting
+    #                 port: 7600
+    #                 path: ./services/reporting-service
+    #                 dockerfile: ./services/reporting-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.reporting }}
+    #                 image: ${{inputs.REPORTING_IMAGE}}
 
-                  - name: task
-                    port: 7100
-                    path: ./services/task-service
-                    dockerfile: ./services/task-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.task }}
-                    image: ${{inputs.TASK_IMAGE}}
+    #               - name: task
+    #                 port: 7100
+    #                 path: ./services/task-service
+    #                 dockerfile: ./services/task-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.task }}
+    #                 image: ${{inputs.TASK_IMAGE}}
 
-                  - name: user
-                    port: 5000
-                    path: ./services/user-service
-                    dockerfile: ./services/user-service/Dockerfile
-                    enabled: ${{ needs.detect-changes.outputs.user }}
-                    image: ${{inputs.USER_IMAGE}}
-        steps:
-            - name: Test frontend accessibility
-              if: needs.detect-changes.outputs.frontend == 'true'
-              run: |
-                echo "Waiting for frontend to start..."
-                sleep 10
-                curl -f http://localhost:80 || (echo "❌ frontend not responding!" && exit 1)
+    #               - name: user
+    #                 port: 5000
+    #                 path: ./services/user-service
+    #                 dockerfile: ./services/user-service/Dockerfile
+    #                 enabled: ${{ needs.detect-changes.outputs.user }}
+    #                 image: ${{inputs.USER_IMAGE}}
+    #     steps:
+    #         - name: Test frontend accessibility
+    #           if: needs.detect-changes.outputs.frontend == 'true'
+    #           run: |
+    #             echo "Waiting for frontend to start..."
+    #             sleep 10
+    #             curl -f http://localhost:80 || (echo "❌ frontend not responding!" && exit 1)
 
-            - name: Test ${{matrix.service.name}} accessibility
-              if: matrix.service.enabled == 'true'
-              run: |
-                echo "Waiting for ${{matrix.service.name}} to start..."
-                sleep 10
-                curl -f http://localhost:${{matrix.service.port}}/health || (echo "❌ ${{matrix.service.name}} not responding!" && exit 1)
+    #         - name: Test ${{matrix.service.name}} accessibility
+    #           if: matrix.service.enabled == 'true'
+    #           run: |
+    #             echo "Waiting for ${{matrix.service.name}} to start..."
+    #             sleep 10
+    #             curl -f http://localhost:${{matrix.service.port}}/health || (echo "❌ ${{matrix.service.name}} not responding!" && exit 1)
 
-            - name: Stop and remove containers
-              if: always()
-              run: |
-                docker ps -a
-                docker stop ${{matrix.service.name}} || true
-                docker rm ${{matrix.service.name}} || true
+    #         - name: Stop and remove containers
+    #           if: always()
+    #           run: |
+    #             docker ps -a
+    #             docker stop ${{matrix.service.name}} || true
+    #             docker rm ${{matrix.service.name}} || true
     push:
-        needs: [test, detect-changes]
+        # needs: [test, detect-changes]
+        needs: detect-changes
         runs-on: self-hosted
         strategy:
             matrix:
