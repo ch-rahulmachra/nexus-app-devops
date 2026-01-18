@@ -122,51 +122,61 @@ jobs:
                   - name: frontend
                     path: ./frontend
                     dockerfile: ./frontend/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.frontend }}
                     image: FRONT_IMAGE
 
                   - name: approval
                     path: ./services/approval-service
                     dockerfile: ./services/approval-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.approval }}
                     image: APPROVAL_IMAGE
 
                   - name: audit
                     path: ./services/audit-service
                     dockerfile: ./services/audit-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.audit }}
                     image: AUDIT_IMAGE
 
                   - name: auth
                     path: ./services/auth-service
                     dockerfile: ./services/auth-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.auth }}
                     image: AUTH_IMAGE
 
                   - name: expense
                     path: ./services/expense-service
                     dockerfile: ./services/expense-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.expense }}
                     image: EXPENSE_IMAGE
 
                   - name: notification
                     path: ./services/notification-service
                     dockerfile: ./services/notification-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.notification }}
                     image: NOTIFICATION_IMAGE
 
                   - name: project
                     path: ./services/project-service
                     dockerfile: ./services/project-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.project }}
                     image: PROJECT_IMAGE
 
                   - name: reporting
                     path: ./services/reporting-service
                     dockerfile: ./services/reporting-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.reporting }}
                     image: REPORTING_IMAGE
 
                   - name: task
                     path: ./services/task-service
                     dockerfile: ./services/task-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.task }}
                     image: TASK_IMAGE
 
                   - name: user
                     path: ./services/user-service
                     dockerfile: ./services/user-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.user }}
                     image: USER_IMAGE
         steps:
           - name: Checkout code
@@ -182,7 +192,7 @@ jobs:
               key: trivy-image-db
 
           - name: Run Trivy vulnerability scanner in fs mode for ${{matrix.service.name}}
-            if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+            if: matrix.service.enabled == 'true'
             uses: aquasecurity/trivy-action@0.28.0
             with:
               scan-type: 'fs'
@@ -219,52 +229,62 @@ jobs:
                   - name: frontend
                     path: ./frontend
                     dockerfile: ./frontend/Dockerfile
-                    image: FRONT_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.frontend }}
+                    image: ${{inputs.FRONT_IMAGE}}
 
                   - name: approval
                     path: ./services/approval-service
                     dockerfile: ./services/approval-service/Dockerfile
-                    image: APPROVAL_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.approval }}
+                    image: ${{inputs.APPROVAL_IMAGE}}
 
                   - name: audit
                     path: ./services/audit-service
                     dockerfile: ./services/audit-service/Dockerfile
-                    image: AUDIT_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.audit }}
+                    image: ${{inputs.AUDIT_IMAGE}}
 
                   - name: auth
                     path: ./services/auth-service
                     dockerfile: ./services/auth-service/Dockerfile
-                    image: AUTH_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.auth }}
+                    image: ${{inputs.AUTH_IMAGE}}
 
                   - name: expense
                     path: ./services/expense-service
                     dockerfile: ./services/expense-service/Dockerfile
-                    image: EXPENSE_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.expense }}
+                    image: ${{inputs.EXPENSE_IMAGE}}
 
                   - name: notification
                     path: ./services/notification-service
                     dockerfile: ./services/notification-service/Dockerfile
-                    image: NOTIFICATION_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.notification }}
+                    image: ${{inputs.NOTIFICATION_IMAGE}}
 
                   - name: project
                     path: ./services/project-service
                     dockerfile: ./services/project-service/Dockerfile
-                    image: PROJECT_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.project }}
+                    image: ${{inputs.PROJECT_IMAGE}}
 
                   - name: reporting
                     path: ./services/reporting-service
                     dockerfile: ./services/reporting-service/Dockerfile
-                    image: REPORTING_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.reporting }}
+                    image: ${{inputs.REPORTING_IMAGE}}
 
                   - name: task
                     path: ./services/task-service
                     dockerfile: ./services/task-service/Dockerfile
-                    image: TASK_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.task }}
+                    image: ${{inputs.TASK_IMAGE}}
 
                   - name: user
                     path: ./services/user-service
                     dockerfile: ./services/user-service/Dockerfile
-                    image: USER_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.user }}
+                    image: ${{inputs.USER_IMAGE}}
         steps:
           - name: Download source code
             uses: actions/download-artifact@v5
@@ -276,8 +296,8 @@ jobs:
             uses: docker/setup-buildx-action@v3
 
           - name: Build Images
-            if: needs.detect-changes.outputs[matrix.service.name] == 'true'
-            run: docker build -t ${{ inputs[matrix.service.image] }}:latest -f ${{ matrix.service.dockerfile}} ${{matrix.service.path}}
+            if: matrix.service.enabled == 'true'
+            run: docker build -t ${{ matrix.service.image }}:latest -f ${{ matrix.service.dockerfile}} ${{matrix.service.path}}
 
           - name: Verify built images
             run: docker images
@@ -291,52 +311,62 @@ jobs:
                   - name: frontend
                     path: ./frontend
                     dockerfile: ./frontend/Dockerfile
-                    image: FRONT_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.frontend }}
+                    image: ${{inputs.FRONT_IMAGE}}
 
                   - name: approval
                     path: ./services/approval-service
                     dockerfile: ./services/approval-service/Dockerfile
-                    image: APPROVAL_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.approval }}
+                    image: ${{inputs.APPROVAL_IMAGE}}
 
                   - name: audit
                     path: ./services/audit-service
                     dockerfile: ./services/audit-service/Dockerfile
-                    image: AUDIT_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.audit }}
+                    image: ${{inputs.AUDIT_IMAGE}}
 
                   - name: auth
                     path: ./services/auth-service
                     dockerfile: ./services/auth-service/Dockerfile
-                    image: AUTH_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.auth }}
+                    image: ${{inputs.AUTH_IMAGE}}
 
                   - name: expense
                     path: ./services/expense-service
                     dockerfile: ./services/expense-service/Dockerfile
-                    image: EXPENSE_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.expense }}
+                    image: ${{inputs.EXPENSE_IMAGE}}
 
                   - name: notification
                     path: ./services/notification-service
                     dockerfile: ./services/notification-service/Dockerfile
-                    image: NOTIFICATION_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.notification }}
+                    image: ${{inputs.NOTIFICATION_IMAGE}}
 
                   - name: project
                     path: ./services/project-service
                     dockerfile: ./services/project-service/Dockerfile
-                    image: PROJECT_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.project }}
+                    image: ${{inputs.PROJECT_IMAGE}}
 
                   - name: reporting
                     path: ./services/reporting-service
                     dockerfile: ./services/reporting-service/Dockerfile
-                    image: REPORTING_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.reporting }}
+                    image: ${{inputs.REPORTING_IMAGE}}
 
                   - name: task
                     path: ./services/task-service
                     dockerfile: ./services/task-service/Dockerfile
-                    image: TASK_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.task }}
+                    image: ${{inputs.TASK_IMAGE}}
 
                   - name: user
                     path: ./services/user-service
                     dockerfile: ./services/user-service/Dockerfile
-                    image: USER_IMAGE
+                    enabled: ${{ needs.detect-changes.outputs.user }}
+                    image: ${{inputs.USER_IMAGE}}
         steps:
             - name: Show Docker images
               run: docker images
@@ -351,10 +381,10 @@ jobs:
                 key: trivy-image-db
                 
             - name: Run Trivy vulnerability scanner for ${{matrix.service.name}} image
-              if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+              if: matrix.service.enabled == 'true'
               uses: aquasecurity/trivy-action@0.28.0
               with:
-                image-ref: '${{ inputs[matrix.service.image] }}:latest'
+                image-ref: '${{ matrix.service.image }}:latest'
                 format: 'table'
                 exit-code: '0'
                 ignore-unfixed: true
@@ -395,31 +425,73 @@ jobs:
                 PROJECT_IMAGE: ${{inputs.PROJECT_IMAGE}}
                 AUDIT_IMAGE: ${{inputs.AUDIT_IMAGE}}
     test:
-        needs: [run]
+        needs: [run, detect-changes]
         runs-on: self-hosted
         strategy:
             matrix:
                 service:
-                #   - name: frontend
-                #     port: 80
                   - name: approval
                     port: 7300
+                    path: ./services/approval-service
+                    dockerfile: ./services/approval-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.approval }}
+                    image: ${{inputs.APPROVAL_IMAGE}}
+
                   - name: audit
                     port: 7500
+                    path: ./services/audit-service
+                    dockerfile: ./services/audit-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.audit }}
+                    image: ${{inputs.AUDIT_IMAGE}}
+
                   - name: auth
                     port: 4000
+                    path: ./services/auth-service
+                    dockerfile: ./services/auth-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.auth }}
+                    image: ${{inputs.AUTH_IMAGE}}
+
                   - name: expense
                     port: 7200
+                    path: ./services/expense-service
+                    dockerfile: ./services/expense-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.expense }}
+                    image: ${{inputs.EXPENSE_IMAGE}}
+
                   - name: notification
                     port: 7400
+                    path: ./services/notification-service
+                    dockerfile: ./services/notification-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.notification }}
+                    image: ${{inputs.NOTIFICATION_IMAGE}}
+
                   - name: project
                     port: 7000
+                    path: ./services/project-service
+                    dockerfile: ./services/project-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.project }}
+                    image: ${{inputs.PROJECT_IMAGE}}
+
                   - name: reporting
                     port: 7600
+                    path: ./services/reporting-service
+                    dockerfile: ./services/reporting-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.reporting }}
+                    image: ${{inputs.REPORTING_IMAGE}}
+
                   - name: task
                     port: 7100
+                    path: ./services/task-service
+                    dockerfile: ./services/task-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.task }}
+                    image: ${{inputs.TASK_IMAGE}}
+
                   - name: user
                     port: 5000
+                    path: ./services/user-service
+                    dockerfile: ./services/user-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.user }}
+                    image: ${{inputs.USER_IMAGE}}
         steps:
             - name: Test frontend accessibility
               if: needs.detect-changes.outputs.frontend == 'true'
@@ -429,7 +501,7 @@ jobs:
                 curl -f http://localhost:80 || (echo "❌ frontend not responding!" && exit 1)
 
             - name: Test ${{matrix.service.name}} accessibility
-              if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+              if: matrix.service.enabled == 'true'
               run: |
                 echo "Waiting for ${{matrix.service.name}} to start..."
                 sleep 10
@@ -442,43 +514,82 @@ jobs:
                 docker stop ${{matrix.service.name}} || true
                 docker rm ${{matrix.service.name}} || true
     push:
-        needs: test
+        needs: [test, detect-changes]
         runs-on: self-hosted
         strategy:
-          matrix:
-            service:
+            matrix:
+                service:
                   - name: frontend
-                    image: FRONT_IMAGE
+                    path: ./frontend
+                    dockerfile: ./frontend/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.frontend }}
+                    image: ${{inputs.FRONT_IMAGE}}
+
                   - name: approval
-                    image: APPROVAL_IMAGE
+                    path: ./services/approval-service
+                    dockerfile: ./services/approval-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.approval }}
+                    image: ${{inputs.APPROVAL_IMAGE}}
+
                   - name: audit
-                    image: AUDIT_IMAGE
+                    path: ./services/audit-service
+                    dockerfile: ./services/audit-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.audit }}
+                    image: ${{inputs.AUDIT_IMAGE}}
+
                   - name: auth
-                    image: AUTH_IMAGE
+                    path: ./services/auth-service
+                    dockerfile: ./services/auth-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.auth }}
+                    image: ${{inputs.AUTH_IMAGE}}
+
                   - name: expense
-                    image: EXPENSE_IMAGE
+                    path: ./services/expense-service
+                    dockerfile: ./services/expense-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.expense }}
+                    image: ${{inputs.EXPENSE_IMAGE}}
+
                   - name: notification
-                    image: NOTIFICATION_IMAGE
+                    path: ./services/notification-service
+                    dockerfile: ./services/notification-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.notification }}
+                    image: ${{inputs.NOTIFICATION_IMAGE}}
+
                   - name: project
-                    image: PROJECT_IMAGE
+                    path: ./services/project-service
+                    dockerfile: ./services/project-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.project }}
+                    image: ${{inputs.PROJECT_IMAGE}}
+
                   - name: reporting
-                    image: REPORTING_IMAGE
+                    path: ./services/reporting-service
+                    dockerfile: ./services/reporting-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.reporting }}
+                    image: ${{inputs.REPORTING_IMAGE}}
+
                   - name: task
-                    image: TASK_IMAGE
+                    path: ./services/task-service
+                    dockerfile: ./services/task-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.task }}
+                    image: ${{inputs.TASK_IMAGE}}
+
                   - name: user
-                    image: USER_IMAGE
+                    path: ./services/user-service
+                    dockerfile: ./services/user-service/Dockerfile
+                    enabled: ${{ needs.detect-changes.outputs.user }}
+                    image: ${{inputs.USER_IMAGE}}
         steps:
               - name: Login in aws ecr
                 run: aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 802314158010.dkr.ecr.ap-south-1.amazonaws.com
 
               - name: Tagging the ${{matrix.service.name}} images
-                if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+                if: matrix.service.enabled == 'true'
                 run: |
-                    docker tag ${{ inputs[matrix.service.image] }} 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:latest
-                    docker tag ${{ inputs[matrix.service.image] }} 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:${{ github.run_number }}
+                    docker tag ${{ matrix.service.image }} 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:latest
+                    docker tag ${{ matrix.service.image }} 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:${{ github.run_number }}
     
               - name: Pushing the Frontend images
-                if: needs.detect-changes.outputs[matrix.service.name] == 'true'
+                if: matrix.service.enabled == 'true'
                 run: |
                     docker push 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:latest
                     docker push 802314158010.dkr.ecr.ap-south-1.amazonaws.com/nexus/${{matrix.service.name}}-app:${{ github.run_number }}
